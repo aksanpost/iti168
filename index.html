@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>검붉은 달의 섬, 자월도 보물 탐험</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --poster-orange: #faa000;
+      --poster-black: #050610;
+      --text-main: #fef5d0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--poster-black);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+    }
+
+    body { display: flex; justify-content: center; align-items: center; }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 390px;
+      height: 100vh;
+      max-height: 844px;
+      border-radius: 20px;
+      border: 8px solid var(--poster-orange);
+      overflow: hidden;
+      background: var(--poster-black);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    }
+
+    header {
+      padding: 40px 20px 30px;
+      padding-top: calc(env(safe-area-inset-top) + 50px);
+      background: radial-gradient(circle at top, #27120c 0, #050305 70%);
+      border-bottom: 3px solid var(--poster-orange);
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .title { font-size: 28px; font-weight: 900; }
+    .timer {
+      font-size: 16px;
+      border: 3px solid var(--poster-orange);
+      padding: 10px 20px;
+      border-radius: 999px;
+      background: rgba(0,0,0,0.8);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .sub-row { display: flex; justify-content: space-between; align-items: flex-end; font-size: 14px; }
+
+    #map {
+      width: 100%;
+      flex: 1;
+      border-top: 3px dashed var(--poster-orange);
+      background-color: #050610;
+      min-height: 300px;
+    }
+
+    /* 공통 모달 */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      background: radial-gradient(circle at top, #29140c 0, #030308 55%);
+      border: 3px solid var(--poster-orange);
+      border-radius: 16px;
+      padding: 20px;
+      color: var(--text-main);
+      max-width: 370px;
+      width: 100%;
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    }
+
+    .modal h2 { font-size: 18px; margin-bottom: 10px; }
+    .modal p { font-size: 14px; line-height: 1.5; margin-bottom: 10px; white-space: pre-line; }
+
+    input[type="text"] {
+      width: 100%; padding: 8px 10px;
+      background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 8px; color: var(--text-main);
+      margin-bottom: 10px;
+    }
+
+    .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+    .btn {
+      border: 2px solid var(--poster-orange);
+      padding: 8px 16px; border-radius: 999px;
+      font-weight: bold; cursor: pointer;
+    }
+    .btn-primary { background: var(--poster-orange); color: var(--poster-black); }
+    .btn-secondary { background: transparent; color: var(--text-main); }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="title">인천 보물섬 168 · 자월도</div>
+      <div class="timer" id="timer">남은 시간 03:00:00</div>
+    </div>
+    <div class="sub-row">
+      <div id="explorerInfo">탐험가: - / 팀: -</div>
+      <div id="progressInfo">수집한 보물: 0 / 9</div>
+    </div>
+  </header>
+  <div id="map"></div>
+</div>
+
+<!-- 인트로 -->
+<div class="modal-backdrop show" id="introBackdrop">
+  <div class="modal">
+    <h2>검붉은 달의 섬, 자월도</h2>
+    <p>자월도 섬 수호자가 숨겨놓은 보물들을 찾아보세요.
+11월 15일 그믐날 오후 2시부터 단 3시간만
+보물이 숨겨진 위치가 지도 위에 나타날 거예요.
+당신에게 주어진 시간은 단 3시간.
+지도를 따라 QR보물을 모두 찾아보세요.</p>
+
+    <label>보물 탐험가 이름</label>
+    <input id="explorerName" type="text" placeholder="이름을 입력하세요" />
+    <label>보물을 탐험하는 팀명 (선택)</label>
+    <input id="teamName" type="text" placeholder="팀명을 입력하세요" />
+    <div class="modal-buttons">
+      <button class="btn btn-primary" id="startButton">보물찾기 시작</button>
+    </div>
+  </div>
+</div>
+
+<!-- 일반 모달 -->
+<div class="modal-backdrop" id="genericBackdrop">
+  <div class="modal" id="genericModal">
+    <h2 id="genericTitle"></h2>
+    <p id="genericBody"></p>
+    <div id="quizWrapper" style="display:none;">
+      <p id="quizQuestion"></p>
+      <input id="quizInput" type="text" placeholder="정답 입력" />
+      <p id="quizHint" style="font-size:12px;color:#faa000;"></p>
+    </div>
+    <div class="modal-buttons" id="genericButtons"></div>
+  </div>
+</div>
+
+<!-- QR 스캔 모달 -->
+<div class="modal-backdrop" id="qrBackdrop">
+  <div class="modal">
+    <h2>보물 QR 스캔</h2>
+    <p>카메라를 열어 QR을 인식해 주세요.</p>
+    <div id="qrReader" style="width:100%;height:240px;background:#000;border-radius:10px;"></div>
+    <p id="qrStatus" style="font-size:13px;color:#faa000;"></p>
+    <div class="modal-buttons">
+      <button class="btn btn-secondary" id="qrCancelBtn">취소</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* 기본 상태 */
+const STORAGE_KEY="jawol_qr_full";
+let map,userMarker,routePolyline;
+let explorerName="",teamName="",gameStarted=false;
+let mapsLoaded=false,shouldInitMap=false;
+let collectedCount=0;
+const TOTAL_TREASURES=9;
+const JAWOL_CENTER={lat:37.5742457,lng:126.9284274};
+const TRAIL_ROUTE=[{lat:37.5742457,lng:126.9284274},{lat:37.5740902,lng:126.9284604},{lat:37.5737905,lng:126.9279182},{lat:37.5743064,lng:126.9273830},{lat:37.5745620,lng:126.9271698},{lat:37.5748637,lng:126.9277207},{lat:37.5747519,lng:126.9279074},{lat:37.5746497,lng:126.9279937},{lat:37.5743784,lng:126.9282229}];
+const TREASURES=[
+  {id:1,name:"장골해수욕장",position:{lat:37.5742457,lng:126.9284274},qr:"J1",quiz:{q:"자월도는 인천시 00군에 속해 있다.",a:"옹진"}},
+  {id:2,name:"자월면사무소",position:{lat:37.5740902,lng:126.9284604},qr:"J2",quiz:{q:"위도+경도를 순서대로 숫자만 입력하세요.",a:"3715141261826"}},
+  {id:3,name:"국사봉 정자",position:{lat:37.5737905,lng:126.9279182},qr:"J3",quiz:{q:"국사봉의 해발고도m는?(숫자만 입력)",a:"166"}},
+  {id:4,name:"돌 제단",position:{lat:37.5743064,lng:126.9273830},qr:"J4",quiz:{q:"서쪽에서 부는 바람을 순우리말로는?00바람",a:"하늬"}},
+  {id:5,name:"하늬께 해수욕장",position:{lat:37.5745620,lng:126.9271698},qr:"J5",story:"이번엔 퀴즈 없이 목섬으로 이동해보세요."},
+  {id:6,name:"안목섬",position:{lat:37.5748637,lng:126.9277207},qr:"J6",story:"대나무숲을 지나 비밀의 해변으로 이동하세요."},
+  {id:7,name:"비밀의 해변",position:{lat:37.5747519,lng:126.9279074},qr:"J7",story:"자월도섬마을박물관으로 이동하세요."},
+  {id:8,name:"자월도섬마을박물관",position:{lat:37.5746497,lng:126.9279937},qr:"J8",quiz:{q:"어망이 발달하기 이전 갯벌에 돌을 쌓아 썰물에 물고기가 빠져나가지 못하게 가두어 잡는 전통적인 어업 방식은?두가지 표현 모두 기입하시오",a:"돌살,독살"}},
+  {id:9,name:"어부상",position:{lat:37.5743784,lng:126.9282229},qr:"J9",quiz:{q:"해산물 중 자월도 특산물 2개는? 힌트:어패류 2개",a:"굴,바지락"}}
+];
+
+function initMap(){
+  const el=document.getElementById("map");
+  if(!el)return;
+  map=new google.maps.Map(el,{center:JAWOL_CENTER,zoom:14,styles:[{elementType:"geometry",stylers:[{color:"#050712"}]},{featureType:"water",stylers:[{color:"#0b1020"}]}]});
+  routePolyline=new google.maps.Polyline({path:TRAIL_ROUTE,geodesic:true,strokeColor:"#faa000",strokeOpacity:0.9,strokeWeight:3,map});
+  TREASURES.forEach((t,i)=>{
+    const m=new google.maps.Marker({position:t.position,map,icon:{path:google.maps.SymbolPath.CIRCLE,scale:10,fillColor:"#faa000",fillOpacity:1,strokeColor:"#050610",strokeWeight:2},label:{text:String(i+1),color:"#050610",fontWeight:"bold"}});
+    m.addListener("click",()=>onTreasureClick(t));
+  });
+  if(navigator.geolocation){
+    navigator.geolocation.watchPosition(p=>{
+      const pos={lat:p.coords.latitude,lng:p.coords.longitude};
+      if(!userMarker){
+        userMarker=new google.maps.Marker({position:pos,map,icon:{path:google.maps.SymbolPath.CIRCLE,scale:6,fillColor:"#fef5d0",fillOpacity:1,strokeColor:"#050610",strokeWeight:2}});
+      }else userMarker.setPosition(pos);
+    });
+  }
+  setTimeout(()=>{google.maps.event.trigger(map,"resize");map.setCenter(JAWOL_CENTER);},800);
+}
+function onMapsReady(){mapsLoaded=true;if(shouldInitMap&&gameStarted){setTimeout(()=>{initMap();setTimeout(()=>{if(map){google.maps.event.trigger(map,"resize");map.setCenter(JAWOL_CENTER);}},1000);},300);}}
+window.onMapsReady=onMapsReady;
+
+function onTreasureClick(t){
+  if(!userMarker){alert("GPS를 확인중입니다.");return;}
+  const d=dist(userMarker.getPosition(),t.position);
+  if(d>5){alert(`보물상자까지 ${Math.round(d)}m 남았습니다.`);return;}
+  if(t.quiz||t.story)openQRModal(t);
+}
+function dist(a,b){const R=6371000;const dLat=(b.lat-a.lat())*Math.PI/180,dLng=(b.lng-a.lng())*Math.PI/180;const x=Math.sin(dLat/2)**2+Math.cos(a.lat()*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));}
+
+/* QR + 퀴즈 */
+let html5QrCode=null,qrScanning=false;
+const qrBackdrop=document.getElementById("qrBackdrop");
+const qrStatus=document.getElementById("qrStatus");
+const qrCancelBtn=document.getElementById("qrCancelBtn");
+function openQRModal(t){
+  qrStatus.textContent="";
+  qrBackdrop.classList.add("show");
+  if(!window.Html5Qrcode){qrStatus.textContent="QR 라이브러리를 불러오지 못했습니다.";return;}
+  if(!html5QrCode)html5QrCode=new Html5Qrcode("qrReader");
+  qrScanning=true;
+  html5QrCode.start({facingMode:"environment"},{fps:10,qrbox:250},txt=>{
+    if(!qrScanning)return;
+    if(txt===t.qr){qrScanning=false;html5QrCode.stop().then(()=>html5QrCode.clear()).catch(()=>{});qrBackdrop.classList.remove("show");handleQR(t);}else{qrStatus.textContent="잘못된 QR입니다.";}
+  });
+}
+qrCancelBtn.onclick=()=>{if(html5QrCode&&qrScanning){qrScanning=false;html5QrCode.stop().then(()=>html5QrCode.clear()).catch(()=>{});}qrBackdrop.classList.remove("show");};
+
+function handleQR(t){
+  if(t.story){showModal(t.name,t.story);collectedCount++;updateUI();saveState();return;}
+  if(t.quiz){showQuiz(t);}
+}
+
+/* 퀴즈 */
+function showQuiz(t){
+  const modal=document.getElementById("genericBackdrop");
+  const qW=document.getElementById("quizWrapper");
+  const qQ=document.getElementById("quizQuestion");
+  const qI=document.getElementById("quizInput");
+  const qH=document.getElementById("quizHint");
+  const gT=document.getElementById("genericTitle");
+  const gB=document.getElementById("genericBody");
+  const gBtns=document.getElementById("genericButtons");
+  gT.textContent=t.name; gB.textContent="";
+  qW.style.display="block"; qQ.textContent=t.quiz.q; qI.value=""; qH.textContent="";
+  gBtns.innerHTML=`<button class='btn btn-secondary' id='cancelQ'>취소</button><button class='btn btn-primary' id='submitQ'>정답제출</button>`;
+  modal.classList.add("show");
+  document.getElementById("cancelQ").onclick=()=>modal.classList.remove("show");
+  document.getElementById("submitQ").onclick=()=>{
+    const ans=qI.value.trim();
+    if(!ans){qH.textContent="정답을 입력하세요.";return;}
+    if(t.quiz.a.replace(/,/g,"").includes(ans)){modal.classList.remove("show");collectedCount++;updateUI();saveState();showModal(t.name,"정답입니다! 다음 장소로 이동하세요.");}
+    else qH.textContent="틀렸습니다. 다시 시도하세요.";
+  };
+}
+
+function showModal(title,body){
+  const m=document.getElementById("genericBackdrop");
+  const t=document.getElementById("genericTitle");
+  const b=document.getElementById("genericBody");
+  const btn=document.getElementById("genericButtons");
+  document.getElementById("quizWrapper").style.display="none";
+  t.textContent=title; b.textContent=body;
+  btn.innerHTML=`<button class='btn btn-primary' id='okBtn'>확인</button>`;
+  document.getElementById("okBtn").onclick=()=>m.classList.remove("show");
+  m.classList.add("show");
+}
+
+/* 상태 저장/복원 */
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify({explorerName,teamName,collectedCount,gameStarted:true}));}
+function loadState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY));}catch{return null;}}
+function restoreIfExists(){const s=loadState();if(!s||!s.gameStarted)return;explorerName=s.explorerName;teamName=s.teamName;collectedCount=s.collectedCount;gameStarted=true;document.getElementById("introBackdrop").classList.remove("show");updateUI();ensureMapInit();}
+function ensureMapInit(){if(mapsLoaded){if(!map)initMap();else google.maps.event.trigger(map,"resize");}else shouldInitMap=true;}
+
+/* 시작 */
+document.getElementById("startButton").onclick=()=>{
+  explorerName=document.getElementById("explorerName").value.trim();
+  teamName=document.getElementById("teamName").value.trim();
+  if(!explorerName){alert("이름을 입력해주세요.");return;}
+  gameStarted=true;
+  document.getElementById("introBackdrop").classList.remove("show");
+  updateUI();saveState();ensureMapInit();
+};
+function updateUI(){
+  document.getElementById("explorerInfo").textContent=`탐험가: ${explorerName} / 팀: ${teamName||"-"}`;
+  document.getElementById("progressInfo").textContent=`수집한 보물: ${collectedCount} / ${TOTAL_TREASURES}`;
+}
+window.addEventListener("DOMContentLoaded",()=>{
+  restoreIfExists();
+  if(typeof google==="undefined"||!google.maps)shouldInitMap=true;
+  else setTimeout(()=>ensureMapInit(),500);
+});
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7nXxqSqbwpKHN866MBWLAWm1GgTK2hyQ&callback=onMapsReady" async defer></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</body>
+</html>
