@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>검붉은 달의 섬, 자월도 보물 탐험</title>
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --poster-orange: #faa000;
+      --poster-black: #050610;
+      --text-main: #222222;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #f4f2eb;
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #app {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      max-width: 390px;   /* iPhone 13 Pro 폭 */
+      height: 100vh;
+      max-height: 844px;  /* iPhone 13 Pro 높이 */
+      border-radius: 20px;
+      border: 8px solid var(--poster-orange);
+      overflow: hidden;
+      background: #ffffff;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    header {
+      padding: 40px 20px 30px;
+      padding-top: calc(env(safe-area-inset-top) + 50px);
+      background: radial-gradient(circle at top, #f7c467 0, #f0a51b 40%, #e98d00 90%);
+      border-bottom: 3px solid var(--poster-black);
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      color: #1b1205;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .logo {
+      display: block;
+      margin: 0 auto;
+      max-width: 340px;
+      height: auto;
+    }
+
+    .timer {
+      font-size: 24px;
+      border: 3px solid var(--poster-black);
+      border-radius: 14px;
+      background: rgba(0,0,0,0.08);
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin: 10px auto 0;
+      padding: 14px 28px;
+      width: fit-content;
+    }
+
+    .sub-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+
+    #map {
+      width: 100%;
+      flex: 1;
+      border-top: 3px dashed var(--poster-black);
+      background-color: #e5e3df;
+      min-height: 300px;
+    }
+
+    .locate-btn {
+      position: absolute;
+      right: 18px;
+      bottom: 24px;
+      z-index: 5000;
+      background: rgba(255,255,255,0.97);
+      color: #333;
+      border-radius: 999px;
+      border: 2px solid var(--poster-orange);
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+    .locate-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+    .modal-backdrop.show { display: flex; }
+
+    .modal {
+      background: #201510;
+      border: 3px solid var(--poster-orange);
+      border-radius: 16px;
+      padding: 20px;
+      color: #fef5e3;
+      max-width: 370px;
+      width: 100%;
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    }
+
+    .modal h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .modal p {
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 10px;
+      white-space: pre-line;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 8px 10px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 8px;
+      color: #fef5e3;
+      margin-bottom: 10px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 2px solid var(--poster-orange);
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--poster-orange);
+      color: var(--poster-black);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #fef5e3;
+    }
+
+    #qrReader {
+      width: 260px;
+      height: 260px;
+      max-width: 80vw;
+      max-height: 80vw;
+      margin: 8px auto;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #qrStatus {
+      font-size: 13px;
+      color: #faa000;
+      text-align: center;
+      min-height: 18px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="header-top">
+      <img src="logo.png" alt="자월도 보물섬 로고" class="logo" />
+    </div>
+    <div class="timer" id="timer">남은 시간 03:00:00</div>
+    <div class="sub-row">
+      <div id="explorerInfo">탐험가: - / 팀: -</div>
+      <div id="progressInfo">수집한 보물: 0 / 9</div>
+    </div>
+  </header>
+
+  <div id="map"></div>
+  <button id="locateBtn" class="locate-btn">현위치</button>
+</div>
+
+<!-- 인트로 모달 -->
+<div class="modal-backdrop show" id="introBackdrop">
+  <div class="modal">
+    <h2>검붉은 달의 섬, 자월도</h2>
+    <p>자월도 섬 수호자가 숨겨놓은 보물들을 찾아보세요.
+11월 15일 그믐날 오후 2시부터 단 3시간만
+보물이 숨겨진 위치가 지도 위에 나타날 거예요.
+당신에게 주어진 시간은 단 3시간.
+지도를 따라 QR보물을 모두 찾아보세요.</p>
+
+    <label>보물 탐험가 이름</label>
+    <input id="explorerName" type="text" placeholder="이름을 입력하세요" />
+
+    <label>보물을 탐험하는 팀명 (선택)</label>
+    <input id="teamName" type="text" placeholder="팀명을 입력하세요" />
+
+    <div class="modal-buttons">
+      <button class="btn btn-primary" id="startButton">보물찾기 시작</button>
+    </div>
+  </div>
+</div>
+
+<!-- 퀴즈/일반 모달 -->
+<div class="modal-backdrop" id="genericBackdrop">
+  <div class="modal" id="genericModal">
+    <h2 id="genericTitle"></h2>
+    <p id="genericBody"></p>
+    <div id="quizWrapper" style="display:none;">
+      <p id="quizQuestion"></p>
+      <input id="quizInput" type="text" placeholder="정답 입력" />
+      <p id="quizHint" style="font-size:12px;color:#faa000;"></p>
+    </div>
+    <div class="modal-buttons" id="genericButtons"></div>
+  </div>
+</div>
+
+<!-- QR 스캔 모달 -->
+<div class="modal-backdrop" id="qrBackdrop">
+  <div class="modal">
+    <h2>보물 QR 스캔</h2>
+    <p>카메라를 열어 QR을 인식해 주세요.</p>
+    <div id="qrReader"></div>
+    <p id="qrStatus"></p>
+    <div class="modal-buttons">
+      <button class="btn btn-secondary" id="qrCancelBtn">취소</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = "jawol_google_final_v6";
+  const urlParams = new URLSearchParams(location.search);
+  const DEBUG_ALWAYS_NEW = urlParams.has("debug");
+  const DEBUG_IGNORE_DISTANCE = urlParams.has("nodist");   // ★ 거리무시 디버그
+
+  const TOTAL_TREASURES = 9;
+  const DIST_THRESHOLD_METERS = 40;  // 40m 반경
+
+  const JAWOL_CENTER = {
+    lat: 37.25023908467981,
+    lng: 126.31249485300387
+  };
+
+  // ★ GPS 테스트 모드 (?testgps)
+  const TEST_MODE = urlParams.has("testgps");
+  const TEST_POS = JAWOL_CENTER;
+
+  const CIRCLED_NUMBERS = ["①","②","③","④","⑤","⑥","⑦","⑧","⑨"];
+
+  const TREASURES = [
+    {
+      id: 1,
+      name: "장골해수욕장",
+      position: { lat: 37.25023908467981, lng: 126.31249485300387 },
+      qr: "J1",
+      quiz: {
+        q: "자월도는 인천시 00군에 속해 있다.",
+        a: "옹진"
+      }
+    },
+    {
+      id: 2,
+      name: "자월면사무소",
+      position: { lat: 37.25408162826835, lng: 126.30741295205134 },
+      qr: "J2",
+      quiz: {
+        q: "통합기준점 표지석에 적힌 위도+경도를 숫자만 순서대로 입력하세요.",
+        a: "3715141261826"
+      }
+    },
+    {
+      id: 3,
+      name: "국사봉 정자",
+      position: { lat: 37.25645411250657, lng: 126.31563968837769 },
+      qr: "J3",
+      quiz: {
+        q: "국사봉의 해발고도m는?(숫자만입력)",
+        a: "166"
+      }
+    },
+    {
+      id: 4,
+      name: "돌 제단",
+      position: { lat: 37.25592079912797, lng: 126.31807648092273 },
+      qr: "J4",
+      quiz: {
+        q: "서쪽에서 부는 바람을 순우리말로 00바람이라고 한다",
+        a: "하늬"
+      }
+    },
+    {
+      id: 5,
+      name: "하늬께 해수욕장",
+      position: { lat: 37.256448013390504, lng: 126.3263596422856 },
+      qr: "J5",
+      story: "이번엔 퀴즈가 없습니다. 여유롭게 풍경을 감상하며 목섬까지 이동해 보세요. 목섬 구름다리를 건너면 안목섬에 있는 벤치를 잘 살펴보세요."
+    },
+    {
+      id: 6,
+      name: "안목섬",
+      position: { lat: 37.260647184278525, lng: 126.32841054404861 },
+      qr: "J6",
+      story: "이번에도 보물을 얻기 위한 퀴즈가 없습니다. 여유롭게 풍경을 감상하며 비밀의 해변가로 가는 길을 찾아보세요. 대나무가 우거진 숲을 지나야 비밀의 해변에 다다를 수 있답니다."
+    },
+    {
+      id: 7,
+      name: "비밀의 해변",
+      position: { lat: 37.24678208030957, lng: 126.32791653550872 },
+      qr: "J7",
+      story: "와, 이 해변. 정말 보물같이 아름답지 않나요? 고생한 보람이 있네요. 이번에도 보물을 얻기 위한 퀴즈가 없습니다. 다시 대나무숲을 지나 자월도섬마을박물관으로 이동하세요. 가는 길의 풍경을 즐겨보세요."
+    },
+    {
+      id: 8,
+      name: "자월도섬마을박물관",
+      position: { lat: 37.244726735607884, lng: 126.31828442848604 },
+      qr: "J8",
+      quiz: {
+        q: "어망이 발달하기 이전 갯벌에 돌을 쌓아 썰물에 물고기가 빠져나가지 못하게 가두어 잡는 전통적인 어업 방식을 뭐라고 하나요?",
+        a: "돌살"
+      }
+    },
+    {
+      id: 9,
+      name: "어부상",
+      position: { lat: 37.24475253367312, lng: 126.31689792536248 },
+      qr: "J9",
+      quiz: {
+        q: "자월도 특산물 2개 중 바다에서 나는 것은?",
+        a: "굴,바지락"
+      }
+    }
+  ];
+
+  const TRAIL_ROUTE = [
+    { lat: 37.2502283, lng: 126.3120516 },
+    { lat: 37.2500673, lng: 126.3096059 },
+    { lat: 37.2498470, lng: 126.3086829 },
+    { lat: 37.2503086, lng: 126.3079435 },
+    { lat: 37.2509626, lng: 126.3078227 },
+    { lat: 37.2516080, lng: 126.3077772 },
+    { lat: 37.2522696, lng: 126.3073392 },
+    { lat: 37.2529684, lng: 126.3071265 },
+    { lat: 37.2536935, lng: 126.3074038 },
+    { lat: 37.2540739, lng: 126.3074421 },
+    { lat: 37.2545585, lng: 126.3084981 },
+    { lat: 37.2549280, lng: 126.3091223 },
+    { lat: 37.2555673, lng: 126.3096309 },
+    { lat: 37.2561439, lng: 126.3094151 },
+    { lat: 37.2568715, lng: 126.3101991 },
+    { lat: 37.2573549, lng: 126.3124398 },
+    { lat: 37.2568497, lng: 126.3136066 },
+    { lat: 37.2565762, lng: 126.3140775 },
+    { lat: 37.2563700, lng: 126.3149958 },
+    { lat: 37.2564413, lng: 126.3154901 },
+    { lat: 37.2564139, lng: 126.3156307 },
+    { lat: 37.2563224, lng: 126.3164511 },
+    { lat: 37.2563659, lng: 126.3167647 },
+    { lat: 37.2563204, lng: 126.3171958 },
+    { lat: 37.2561776, lng: 126.3174589 },
+    { lat: 37.2565233, lng: 126.3264214 },
+    { lat: 37.2566024, lng: 126.3270415 },
+    { lat: 37.2565606, lng: 126.3274269 },
+    { lat: 37.2567911, lng: 126.3279195 },
+    { lat: 37.2571520, lng: 126.3281934 },
+    { lat: 37.2572383, lng: 126.3285959 },
+    { lat: 37.2568927, lng: 126.3292130 },
+    { lat: 37.2576266, lng: 126.3291187 },
+    { lat: 37.2583605, lng: 126.3290244 },
+    { lat: 37.2588602, lng: 126.3289725 },
+    { lat: 37.2597254, lng: 126.3289968 },
+    { lat: 37.2601669, lng: 126.3286301 },
+    { lat: 37.2604325, lng: 126.3285574 },
+    { lat: 37.2599428, lng: 126.3288346 },
+    { lat: 37.2594019, lng: 126.3291297 },
+    { lat: 37.2589003, lng: 126.3289502 },
+    { lat: 37.2583474, lng: 126.3290205 },
+    { lat: 37.2576233, lng: 126.3291168 },
+    { lat: 37.2566019, lng: 126.3290995 },
+    { lat: 37.2560785, lng: 126.3285918 },
+    { lat: 37.2554465, lng: 126.3279382 },
+    { lat: 37.2547517, lng: 126.3256475 },
+    { lat: 37.2548856, lng: 126.3268292 },
+    { lat: 37.2541766, lng: 126.3276281 },
+    { lat: 37.2536099, lng: 126.3272678 },
+    { lat: 37.2527741, lng: 126.3264525 },
+    { lat: 37.2521953, lng: 126.3262881 },
+    { lat: 37.2513810, lng: 126.3255095 },
+    { lat: 37.2509989, lng: 126.3255929 },
+    { lat: 37.2506143, lng: 126.3258483 },
+    { lat: 37.2501871, lng: 126.3265759 },
+    { lat: 37.2494546, lng: 126.3262023 },
+    { lat: 37.2489982, lng: 126.3266758 },
+    { lat: 37.2482480, lng: 126.3271361 },
+    { lat: 37.2475598, lng: 126.3271582 },
+    { lat: 37.2472223, lng: 126.3275941 },
+    { lat: 37.2471884, lng: 126.3280812 },
+    { lat: 37.2468665, lng: 126.3280569 },
+    { lat: 37.2472141, lng: 126.3276666 },
+    { lat: 37.2477587, lng: 126.3270216 },
+    { lat: 37.2481917, lng: 126.3271157 },
+    { lat: 37.2484256, lng: 126.3251278 },
+    { lat: 37.2479047, lng: 126.3245521 },
+    { lat: 37.2476052, lng: 126.3240858 },
+    { lat: 37.2471734, lng: 126.3220327 },
+    { lat: 37.2464983, lng: 126.3218615 },
+    { lat: 37.2467776, lng: 126.3211796 },
+    { lat: 37.2466694, lng: 126.3204633 },
+    { lat: 37.2463112, lng: 126.3198630 },
+    { lat: 37.2456928, lng: 126.3198889 },
+    { lat: 37.2451246, lng: 126.3191900 },
+    { lat: 37.2447718, lng: 126.3190398 },
+    { lat: 37.2446612, lng: 126.3182139 },
+    { lat: 37.2448629, lng: 126.3182970 },
+    { lat: 37.2447165, lng: 126.3186268 },
+    { lat: 37.2447821, lng: 126.3174770 },
+    { lat: 37.2447685, lng: 126.3170192 },
+    { lat: 37.2454990, lng: 126.3170880 },
+    { lat: 37.24624,   lng: 126.31725 },
+    { lat: 37.2472654, lng: 126.3166244 },
+    { lat: 37.2482931, lng: 126.3168277 },
+    { lat: 37.2492385, lng: 126.3163765 },
+    { lat: 37.2498462, lng: 126.3149985 },
+    { lat: 37.2501769, lng: 126.3136201 },
+    { lat: 37.2499519, lng: 126.3120945 },
+    { lat: 37.2502283, lng: 126.3120516 }
+  ];
+
+  function checkAnswerFlexible(correct, input) {
+    const clean = str => str.replace(/\s+/g,"").split(/[,]/).filter(Boolean);
+    const correctList = clean(correct);
+    const inputList = clean(input);
+    if (correctList.length === 0 || inputList.length === 0) return false;
+    const everyInInput = correctList.every(ans => inputList.includes(ans));
+    const everyInCorrect = inputList.every(ans => correctList.includes(ans));
+    return everyInInput || everyInCorrect;
+  }
+
+  let map, userMarker, routePolyline;
+  let explorerName = "", teamName = "";
+  let gameStarted = false;
+  let mapsLoaded = false, shouldInitMap = false;
+
+  let clearedIds = new Set();
+  let markerById = {};
+  let CLOSED_ICON, OPEN_ICON;
+
+  let userPos = null;
+  let lastHeading = 0;
+
+  let gameStartTime = null;
+  let endTime = null;
+  let timerInterval = null;
+  const timerEl = document.getElementById("timer");
+
+  function initMap() {
+    const el = document.getElementById("map");
+    if (!el) return;
+
+    map = new google.maps.Map(el, {
+      center: JAWOL_CENTER,
+      zoom: 14,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    });
+
+    CLOSED_ICON = {
+      url: "closed-chest.png",
+      scaledSize: new google.maps.Size(35, 26),
+      labelOrigin: new google.maps.Point(18, 0)
+    };
+    OPEN_ICON = {
+      url: "open-chest.png",
+      scaledSize: new google.maps.Size(35, 26),
+      labelOrigin: new google.maps.Point(18, 0)
+    };
+
+    routePolyline = new google.maps.Polyline({
+      path: TRAIL_ROUTE,
+      geodesic: true,
+      strokeColor: "#ff8c00",
+      strokeOpacity: 0.9,
+      strokeWeight: 4,
+      map
+    });
+
+    TREASURES.forEach((t, i) => {
+      const icon = clearedIds.has(t.id) ? OPEN_ICON : CLOSED_ICON;
+      const labelChar = CIRCLED_NUMBERS[i] || String(i+1);
+
+      const marker = new google.maps.Marker({
+        position: t.position,
+        map,
+        icon,
+        label: {
+          text: labelChar,
+          color: "#ffffff",
+          fontWeight: "bold",
+          fontSize: "18px"
+        },
+        zIndex: 10
+      });
+
+      markerById[t.id] = marker;
+      marker.addListener("click", () => onTreasureClick(t));
+    });
+
+    if (navigator.geolocation && !TEST_MODE) {
+      navigator.geolocation.watchPosition(
+        position => {
+          const { latitude, longitude, heading } = position.coords;
+          userPos = { lat: latitude, lng: longitude };
+
+          if (heading !== null && !Number.isNaN(heading)) {
+            lastHeading = heading;
+          }
+
+          const icon = {
+            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+            scale: 6,
+            fillColor: "#007aff",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+            rotation: lastHeading
+          };
+
+          if (!userMarker) {
+            userMarker = new google.maps.Marker({
+              position: userPos,
+              map,
+              icon,
+              title: "현재 위치"
+            });
+            map.setCenter(userPos);
+            map.setZoom(17);
+          } else {
+            userMarker.setPosition(userPos);
+            userMarker.setIcon(icon);
+          }
+        },
+        error => {
+          console.error("GPS 에러", error);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 15000
+        }
+      );
+    } else if (TEST_MODE) {
+      userPos = TEST_POS;
+      const icon = {
+        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+        scale: 6,
+        fillColor: "#007aff",
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 2,
+        rotation: 0
+      };
+      userMarker = new google.maps.Marker({
+        position: TEST_POS,
+        map,
+        icon,
+        title: "테스트 위치"
+      });
+      map.setCenter(TEST_POS);
+      map.setZoom(17);
+    }
+
+    setTimeout(() => {
+      google.maps.event.trigger(map, "resize");
+      map.setCenter(JAWOL_CENTER);
+    }, 800);
+  }
+
+  function onMapsReady() {
+    mapsLoaded = true;
+    if (shouldInitMap && gameStarted) {
+      setTimeout(() => {
+        initMap();
+        setTimeout(() => {
+          if (map) {
+            google.maps.event.trigger(map, "resize");
+            map.setCenter(JAWOL_CENTER);
+          }
+        }, 1000);
+      }, 300);
+    }
+  }
+  window.onMapsReady = onMapsReady;
+
+  function ensureMapInit() {
+    if (mapsLoaded) {
+      if (!map) {
+        initMap();
+      } else {
+        google.maps.event.trigger(map, "resize");
+      }
+    } else {
+      shouldInitMap = true;
+    }
+  }
+
+  function startTimer(existingStartTime) {
+    const THREE_HOURS = 3 * 60 * 60 * 1000;
+
+    if (existingStartTime) gameStartTime = existingStartTime;
+    else gameStartTime = Date.now();
+
+    endTime = gameStartTime + THREE_HOURS;
+    if (timerInterval) clearInterval(timerInterval);
+
+    function tick() {
+      const now = Date.now();
+      const diff = endTime - now;
+
+      if (diff <= 0) {
+        clearInterval(timerInterval);
+        timerEl.textContent = "남은 시간 00:00:00";
+        showModal("시간 종료", "3시간이 모두 지났습니다.\n출발지로 돌아가 주세요.");
+        return;
+      }
+
+      const totalSec = Math.floor(diff / 1000);
+      const h = String(Math.floor(totalSec / 3600)).padStart(2,"0");
+      const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2,"0");
+      const s = String(totalSec % 60).padStart(2,"0");
+      timerEl.textContent = `남은 시간 ${h}:${m}:${s}`;
+    }
+
+    tick();
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      explorerName,
+      teamName,
+      gameStarted: true,
+      startTime: gameStartTime,
+      clearedIds: Array.from(clearedIds)
+    }));
+  }
+
+  function loadState() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY));
+    } catch {
+      return null;
+    }
+  }
+
+  function restoreIfExists() {
+    if (DEBUG_ALWAYS_NEW) {
+      localStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+
+    const s = loadState();
+    if (!s || !s.gameStarted) return;
+
+    const THREE_HOURS = 3 * 60 * 60 * 1000;
+    const now = Date.now();
+    if (!s.startTime || now >= s.startTime + THREE_HOURS) {
+      localStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+
+    explorerName = s.explorerName;
+    teamName = s.teamName;
+    clearedIds = new Set(s.clearedIds || []);
+    gameStarted = true;
+    gameStartTime = s.startTime;
+
+    document.getElementById("introBackdrop").classList.remove("show");
+    updateUI();
+    startTimer(s.startTime);
+    ensureMapInit();
+  }
+
+  function updateUI() {
+    document.getElementById("explorerInfo").textContent =
+      `탐험가: ${explorerName} / 팀: ${teamName || "-"}`;
+    document.getElementById("progressInfo").textContent =
+      `수집한 보물: ${clearedIds.size} / ${TOTAL_TREASURES}`;
+  }
+
+  function refreshMarkerIcons() {
+    TREASURES.forEach((t) => {
+      const marker = markerById[t.id];
+      if (!marker || !CLOSED_ICON || !OPEN_ICON) return;
+      const icon = clearedIds.has(t.id) ? OPEN_ICON : CLOSED_ICON;
+      marker.setIcon(icon);
+    });
+  }
+
+  function distanceInMeters(posA, posBObj) {
+    const R = 6371000;
+    const lat1 = posA.lat();
+    const lng1 = posA.lng();
+    const lat2 = posBObj.lat;
+    const lng2 = posBObj.lng;
+
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  function onTreasureClick(t) {
+    // 디버그가 아니면 GPS 없을 때 막기
+    if (!userMarker && !DEBUG_IGNORE_DISTANCE) {
+      alert("GPS를 확인중입니다. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    if (!DEBUG_IGNORE_DISTANCE) {
+      const d = distanceInMeters(
+        userMarker.getPosition(),
+        t.position
+      );
+      if (d > DIST_THRESHOLD_METERS) {
+        alert(`보물상자까지 약 ${Math.round(d)}m 남았습니다.\n${DIST_THRESHOLD_METERS}m 이내로 접근해 주세요.`);
+        return;
+      }
+    } else {
+      // 디버그 모드에서는 거리만 콘솔에 참고용 출력
+      if (userMarker) {
+        const d = distanceInMeters(userMarker.getPosition(), t.position);
+        console.log(`DEBUG_IGNORE_DISTANCE ON - 실제 거리 약 ${Math.round(d)}m`);
+      } else {
+        console.log("DEBUG_IGNORE_DISTANCE ON - userMarker 없음, 거리 계산 스킵");
+      }
+    }
+
+    openQRModal(t);
+  }
+
+  document.getElementById("locateBtn").addEventListener("click", () => {
+    if (map && userMarker) {
+      map.panTo(userMarker.getPosition());
+      map.setZoom(17);
+    } else if (map && navigator.geolocation && !TEST_MODE) {
+      navigator.geolocation.getCurrentPosition(p => {
+        const pos = { lat: p.coords.latitude, lng: p.coords.longitude };
+        map.panTo(pos);
+        map.setZoom(17);
+      });
+    } else if (map && TEST_MODE) {
+      map.panTo(TEST_POS);
+      map.setZoom(17);
+    }
+  });
+
+  let html5QrCode = null;
+  let qrScanning = false;
+  const qrBackdrop = document.getElementById("qrBackdrop");
+  const qrStatus = document.getElementById("qrStatus");
+  const qrCancelBtn = document.getElementById("qrCancelBtn");
+
+  function openQRModal(t) {
+    qrStatus.textContent = "";
+    qrBackdrop.classList.add("show");
+
+    if (!window.Html5Qrcode) {
+      qrStatus.textContent = "QR 라이브러리를 불러오지 못했습니다.";
+      return;
+    }
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("qrReader");
+    }
+
+    qrScanning = true;
+    html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 220, height: 220 } },
+      txt => {
+        if (!qrScanning) return;
+        if (txt === t.qr) {
+          qrScanning = false;
+          html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
+          qrBackdrop.classList.remove("show");
+          handleQR(t);
+        } else {
+          qrStatus.textContent = "다른 QR입니다. 보물 QR을 다시 스캔해주세요.";
+        }
+      },
+      err => {}
+    ).catch(err => {
+      qrStatus.textContent = "카메라 시작에 실패했습니다. 권한과 HTTPS를 확인해주세요.";
+    });
+  }
+
+  qrCancelBtn.onclick = () => {
+    if (html5QrCode && qrScanning) {
+      qrScanning = false;
+      html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
+    }
+    qrBackdrop.classList.remove("show");
+  };
+
+  function markCleared(t) {
+    if (!clearedIds.has(t.id)) {
+      clearedIds.add(t.id);
+      refreshMarkerIcons();
+      updateUI();
+      saveState();
+    }
+  }
+
+  function handleQR(t) {
+    if (t.story) {
+      markCleared(t);
+      showModal(t.name, t.story);
+      return;
+    }
+    if (t.quiz) {
+      showQuiz(t);
+      return;
+    }
+    markCleared(t);
+    showModal(t.name, "보물을 획득했습니다!");
+  }
+
+  function showQuiz(t) {
+    const modal = document.getElementById("genericBackdrop");
+    const qW = document.getElementById("quizWrapper");
+    const qQ = document.getElementById("quizQuestion");
+    const qI = document.getElementById("quizInput");
+    const qH = document.getElementById("quizHint");
+    const gT = document.getElementById("genericTitle");
+    const gB = document.getElementById("genericBody");
+    const gBtns = document.getElementById("genericButtons");
+
+    gT.textContent = t.name;
+    gB.textContent = "";
+    qW.style.display = "block";
+    qQ.textContent = t.quiz.q;
+    qI.value = "";
+    qH.textContent = "";
+    gBtns.innerHTML =
+      "<button class='btn btn-secondary' id='cancelQ'>취소</button>" +
+      "<button class='btn btn-primary' id='submitQ'>정답제출</button>";
+
+    modal.classList.add("show");
+
+    document.getElementById("cancelQ").onclick = () => {
+      modal.classList.remove("show");
+    };
+
+    document.getElementById("submitQ").onclick = () => {
+      const ans = qI.value.trim();
+      if (!ans) {
+        qH.textContent = "정답을 입력하세요.";
+        return;
+      }
+
+      if (checkAnswerFlexible(t.quiz.a, ans)) {
+        modal.classList.remove("show");
+        markCleared(t);
+
+        if (t.id === 1) {
+          showModalHTML(
+            t.name,
+            `훌륭하군요. 다음 보물은 자월면사무소에 있습니다.<br>
+            면사무소에서 다음과 같은 문양을 찾아 가세요.<br><br>
+            <img src="pattern-hint.png"
+                 alt="패턴 힌트"
+                 style="width:100%;max-width:260px;display:block;margin:8px auto;border-radius:8px;" />`
+          );
+        } else if (t.id === 2) {
+          showModalHTML(
+            t.name,
+            `잘 찾으셨네요. 모든 보물들이 전부 위도와 경도로 표시가 돼 있으면 보물을 찾는 것도 쉬운데…<br>
+            옛날 사람들은 위도와 경도, GPS 같은 게 없었을텐데 어떻게 보물을 숨기고 그 위치를 기억했을까…<br>
+            아, 제일 높은 곳을 올라서 지형을 보면서 숨겼겠군.<br><br>
+            자월도에서 제일 높은 곳으로 올라가 봅시다.<br>
+            지도를 따라 국사봉으로 가보세요.`
+          );
+        } else if (t.id === 3) {
+          showModalHTML(
+            t.name,
+            `자월도에서 제일 높은 곳을 잘 찾으셨군요.<br>
+            억울한 누명을 쓰고 유배 왔던 사람들을 생각해보니 자월도가 다시 보이는군요.<br><br>
+            다음 보물은 돌 제단에 있습니다.<br>
+            조선시대에는 봉화대로도 사용됐다고 하더군요.`
+          );
+        } else if (t.id === 4) {
+          showModalHTML(
+            t.name,
+            "정답입니다. 다음 보물의 위치는 하늬께 해수욕장입니다. 주차공간 주변을 잘 찾아보세요."
+          );
+        } else if (t.id === 8) {
+          showModalHTML(
+            t.name,
+            `오늘 저녁에 갯벌에서 전통적인 방식으로 물고기를 잡아볼 수 있겠다는 생각도 듭니다.<br>
+            조수간만이 커서 어부들이 썰물 때는 배를 해안으로 대기도 힘들었을 것 같아요.<br><br>
+            안 그래도 아내를 두고 바다를 나갔다가 돌아오지 못한 어부가 있다는데<br>
+            그 어부를 찾으면 마지막 QR보물을 찾을 수 있을거에요.`
+          );
+        } else if (t.id === 9) {
+          showModalHTML(
+            t.name,
+            `자월도에 흩어져 있는 QR보물을 모두 수집하셨군요. <br> 
+            자 그럼 이제 서둘러서 우리가 출발했던 곳으로 돌아가 보시죠. <br>
+            섬수호자가 준비한 자월도의 진짜 보물, 신비한 붉은 달이 선물처럼 여러분을 맞이할 테니깐요.`
+          );
+        } else {
+          showModal(t.name, "정답입니다! 다음 장소로 이동하세요.");
+        }
+
+      } else {
+        qH.textContent = "틀렸습니다. 다시 시도하세요.";
+      }
+    };
+  }
+
+  function showModal(title, body) {
+    const m = document.getElementById("genericBackdrop");
+    const t = document.getElementById("genericTitle");
+    const b = document.getElementById("genericBody");
+    const btn = document.getElementById("genericButtons");
+    document.getElementById("quizWrapper").style.display = "none";
+    t.textContent = title;
+    b.textContent = body;
+    btn.innerHTML = "<button class='btn btn-primary' id='okBtn'>확인</button>";
+    document.getElementById("okBtn").onclick = () => m.classList.remove("show");
+    m.classList.add("show");
+  }
+
+  function showModalHTML(title, html) {
+    const m = document.getElementById("genericBackdrop");
+    const t = document.getElementById("genericTitle");
+    const b = document.getElementById("genericBody");
+    const btn = document.getElementById("genericButtons");
+
+    document.getElementById("quizWrapper").style.display = "none";
+
+    t.textContent = title;
+    b.innerHTML = html;
+
+    btn.innerHTML = "<button class='btn btn-primary' id='okBtn'>OK</button>";
+    document.getElementById("okBtn").onclick = () => {
+      m.classList.remove("show");
+    };
+
+    m.classList.add("show");
+  }
+
+  document.getElementById("startButton").onclick = () => {
+    explorerName = document.getElementById("explorerName").value.trim();
+    teamName = document.getElementById("teamName").value.trim();
+    if (!explorerName) {
+      alert("이름을 입력해주세요.");
+      return;
+    }
+    gameStarted = true;
+    document.getElementById("introBackdrop").classList.remove("show");
+    updateUI();
+    startTimer();
+    saveState();
+    ensureMapInit();
+  };
+
+  window.addEventListener("DOMContentLoaded", () => {
+    restoreIfExists();
+    if (typeof google === "undefined" || !google.maps) {
+    } else {
+      ensureMapInit();
+    }
+  });
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA7nXxqSqbwpKHN866MBWLAWm1GgTK2hyQ&callback=onMapsReady" async defer></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</body>
+</html>
